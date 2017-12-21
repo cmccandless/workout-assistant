@@ -26,4 +26,4 @@ def remove(db, opts):
 
 
 def run(db, opts):
-    print('running plan', opts.name)
+    print('running plan', opts.name, 'for', ', '.join(opts.buddy))
