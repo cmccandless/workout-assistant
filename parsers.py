@@ -2,6 +2,7 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import plan
 import buddy
 import shlex
+from tinydb import TinyDB
 
 
 def read_command():
@@ -9,7 +10,8 @@ def read_command():
     return shell_main_parser.parse_known_args(args)
 
 
-def shell(db, opts):
+def shell(opts):
+    db = opts.db
     while True:
         opts, args = read_command()
         try:
@@ -20,12 +22,16 @@ def shell(db, opts):
                     args += ['-h']
                     opts, args = shell_main_parser.parse_known_args(args)
                 else:
-                    shell_main_parser.print_help()
+                    print(shell_main_parser.format_help())
                     continue
             if opts.command in ['buddy', 'b']:
-                buddy_parser.parse_args(args)
+                opts = buddy_parser.parse_args(args)
+                setattr(opts, 'db', db)
+                opts.func(opts)
             elif opts.command in ['plan', 'p']:
-                plan_parser.parse_args(args)
+                opts = plan_parser.parse_args(args)
+                setattr(opts, 'db', db)
+                opts.func(opts)
         except SystemExit:
             pass
 
@@ -44,7 +50,9 @@ main_parser = BaseParser()
 main_commands = main_parser.add_subparsers()
 
 # Global Arguments
-main_parser.add_argument('--db', default='db.json', help='database file path')
+main_parser.add_argument(
+    '--db', default='db.json', help='database file path', type=TinyDB
+)
 
 # Commands {
 # (b|buddy)
@@ -64,10 +72,10 @@ buddy_add_parser = buddy_commands.add_parser(
 buddy_add_parser.set_defaults(func=buddy.add)
 
 buddy_list_parser = buddy_commands.add_parser('list', aliases=['ls'])
-buddy_list_parser.set_defaults(func=buddy.list)
+buddy_list_parser.set_defaults(func=buddy.ls)
 
 buddy_stats_parser = buddy_commands.add_parser(
-    'stats', aliases=['s'], parents=NAME_NEEDED
+    'stats', aliases=['st'], parents=NAME_NEEDED
 )
 buddy_stats_parser.set_defaults(func=buddy.stats)
 
@@ -75,6 +83,11 @@ buddy_remove_parser = buddy_commands.add_parser(
     'remove', aliases=['rm'], parents=NAME_NEEDED
 )
 buddy_remove_parser.set_defaults(func=buddy.remove)
+
+buddy_log_parser = buddy_commands.add_parser(
+    'log', aliases=['l'], parents=NAME_NEEDED
+)
+buddy_log_parser.set_defaults(func=buddy.log)
 
 # plan {
 # (a|add) name
@@ -94,7 +107,7 @@ plan_add_parser = plan_commands.add_parser(
 plan_add_parser.set_defaults(func=plan.add)
 
 plan_list_parser = plan_commands.add_parser('list', aliases=['ls'])
-plan_list_parser.set_defaults(func=plan.list)
+plan_list_parser.set_defaults(func=plan.ls)
 
 plan_details_parser = plan_commands.add_parser(
     'details', aliases=['d'], parents=NAME_NEEDED
@@ -102,7 +115,7 @@ plan_details_parser = plan_commands.add_parser(
 plan_details_parser.set_defaults(func=plan.details)
 
 plan_stats_parser = plan_commands.add_parser(
-    'stats', aliases=['s'], parents=NAME_NEEDED
+    'stats', aliases=['st'], parents=NAME_NEEDED
 )
 plan_stats_parser.set_defaults(func=plan.stats)
 
@@ -127,5 +140,11 @@ shell_parser.set_defaults(func=shell)
 
 shell_main_parser = BaseParser(add_help=False)
 shell_main_parser.add_argument(
-    'command', choices=['help', 'h', '?', 'buddy', 'b', 'plan', 'p', 'exit', 'q', 'quit']
+    'command',
+    choices=[
+        'help', 'h', '?',
+        'buddy', 'b',
+        'plan', 'p',
+        'exit', 'q', 'quit'
+    ]
 )

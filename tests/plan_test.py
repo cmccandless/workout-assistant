@@ -6,8 +6,8 @@ class TestPlan(unittest.TestCase):
     def test_exists_add(self):
         self.assertIs(hasattr(plan, 'add'), True)
 
-    def test_exists_list(self):
-        self.assertIs(hasattr(plan, 'list'), True)
+    def test_exists_ls(self):
+        self.assertIs(hasattr(plan, 'ls'), True)
 
     def test_exists_details(self):
         self.assertIs(hasattr(plan, 'details'), True)
